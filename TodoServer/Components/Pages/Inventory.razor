@@ -1,0 +1,288 @@
+﻿@page "/inventory"
+@using CurrieTechnologies.Razor.SweetAlert2
+@rendermode InteractiveServer
+
+@inject IHttpClientFactory HttpClientFactory
+@inject IWebHostEnvironment Env  
+@inject SweetAlertService Swal
+
+<PageTitle>Inventory</PageTitle>
+
+<h3>Inventory</h3>
+
+<div class="mb-3">
+    <input type="text" class="form-control" placeholder="Name" @bind="newProduct.Name">
+    <input type="text" class="form-control mt-2" placeholder="Description" @bind="newProduct.Description">
+    <input type="text" class="form-control mt-2" placeholder="Category" @bind="newProduct.Category">
+    <input type="number" class="form-control mt-2" placeholder="Quantity" @bind="newProduct.Quantity">
+    <input type="number" class="form-control mt-2" placeholder="Price" @bind="newProduct.Price">
+    <select class="form-control mt-2" @bind="newProduct.Status">
+        <option value="">Select Status</option>
+        <option value="In-Stock">In-Stock</option>
+        <option value="Out of stock">Out of stock</option>
+    </select>
+
+    <!-- File Upload -->
+    <InputFile OnChange="HandleFileUpload" class="form-control mt-2" />
+
+    <button class="btn btn-success mt-2" @onclick="AddProduct">Add Product</button>
+</div>
+
+<!-- Display Uploaded Image -->
+@if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+{
+    <img src="@newProduct.ImageUrl" width="150" class="mt-2" />
+}
+
+<div class="row">
+    @foreach (var product in products)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="@product.ImageUrl" class="card-img-top" alt="Product Image" style="max-height: 150px; width: 100%; object-fit: contain;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <input type="text" class="form-control" @bind="product.Name">
+                    </h5>
+                    <p class="card-text">
+                        <input type="text" class="form-control" @bind="product.Description">
+                    </p>
+                    <p><strong>Category:</strong> <input type="text" class="form-control" @bind="product.Category"></p>
+                    <p><strong>Quantity:</strong> <input type="number" class="form-control" @bind="product.Quantity"></p>
+                    <p><strong>Price:</strong> <input type="number" class="form-control" @bind="product.Price"></p>
+                    <p>
+                        <strong>Status:</strong>
+                        <select class="form-control" @bind="product.Status">
+                            <option value="">Select Status</option>
+                            <option value="In-Stock">In-Stock</option>
+                            <option value="Out of stock">Out of stock</option>
+                        </select>
+                    </p>
+                    <div class="text-center">
+                        <InputFile OnChange="(e) => OnImageSelected(e, product)" accept="image/*" class="form-control" />
+                        <button class="btn btn-warning btn-sm mt-2" @onclick="() => UpdateProductImage(product)">Update Image</button>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <button class="btn btn-primary btn-sm" @onclick="() => UpdateProduct(product)">Update</button>
+                        <button class="btn btn-danger btn-sm ms-2" @onclick="() => ConfirmDelete(product.Id)">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Product> products = new();
+    private Product newProduct = new();
+    private IBrowserFile uploadedFile; // Store the uploaded file
+    private Dictionary<int, IBrowserFile> selectedImages = new();
+
+    private void OnImageSelected(InputFileChangeEventArgs e, Product product)
+    {
+        var file = e.File; // Correctly retrieves the file
+        if (file != null)
+        {
+            selectedImages[product.Id] = file;
+        }
+    }
+
+    private async Task ConfirmDelete(int productId)
+    {
+        var result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are you sure?",
+                Text = "This action cannot be undone!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes, delete it!",
+                CancelButtonText = "No, cancel!"
+            });
+
+        if (result.IsConfirmed)
+        {
+            await DeleteProduct(productId);
+            await Swal.FireAsync("Deleted!", "The product has been removed.", SweetAlertIcon.Success);
+        }
+    }
+
+    private async Task UpdateProductImage(Product product)
+    {
+        if (!selectedImages.ContainsKey(product.Id)) return;
+
+        var file = selectedImages[product.Id];
+        var fileName = $"{Guid.NewGuid()}_{file.Name}";
+        var filePath = Path.Combine("wwwroot/images", fileName);
+
+        Directory.CreateDirectory("wwwroot/images");
+
+        await using var fs = new FileStream(filePath, FileMode.Create);
+        await file.OpenReadStream().CopyToAsync(fs);
+
+        if (!string.IsNullOrEmpty(product.ImageUrl) && !product.ImageUrl.EndsWith("default.jpg"))
+        {
+            var oldImagePath = Path.Combine("wwwroot", product.ImageUrl.TrimStart('/'));
+            if (File.Exists(oldImagePath))
+            {
+                File.Delete(oldImagePath);
+            }
+        }
+
+        product.ImageUrl = $"/images/{fileName}";
+
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+        var response = await client.PutAsJsonAsync($"https://10.0.0.12:7081/api/Product/{product.Id}", product);
+
+        selectedImages.Remove(product.Id);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Image Updated!",
+                    Text = "Product image has been successfully updated.",
+                    Icon = SweetAlertIcon.Success,
+                    ConfirmButtonText = "OK"
+                });
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+        try
+        {
+            products = await client.GetFromJsonAsync<List<Product>>("api/Product") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products: {ex.Message}");
+        }
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        uploadedFile = e.File;
+        if (uploadedFile != null)
+        {
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(uploadedFile.Name)}";
+            var filePath = Path.Combine(Env.WebRootPath, "images", fileName);
+
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
+            await uploadedFile.OpenReadStream().CopyToAsync(fileStream);
+
+            newProduct.ImageUrl = $"/images/{fileName}"; // Store relative path
+        }
+    }
+
+    private async Task AddProduct()
+    {
+        if (string.IsNullOrWhiteSpace(newProduct.Name) || newProduct.Quantity <= 0 || newProduct.Price <= 0) return;
+
+        if (string.IsNullOrEmpty(newProduct.ImageUrl))
+        {
+            newProduct.ImageUrl = "/images/default.jpg";
+        }
+
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+        try
+        {
+            var response = await client.PostAsJsonAsync("https://10.0.0.12:7081/api/Product", newProduct);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadProducts();
+                newProduct = new(); // Reset input fields
+
+                await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Success!",
+                        Text = "Product has been added successfully.",
+                        Icon = SweetAlertIcon.Success,
+                        ConfirmButtonText = "OK"
+                    });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding product: {ex.Message}");
+        }
+    }
+
+
+    private async Task UpdateProduct(Product product)
+    {
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+        try
+        {
+            var response = await client.PutAsJsonAsync($"https://10.0.0.12:7081/api/Product/{product.Id}", product);
+            if (response.IsSuccessStatusCode)
+            {
+                await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Updated!",
+                        Text = "Product details have been updated.",
+                        Icon = SweetAlertIcon.Success,
+                        ConfirmButtonText = "OK"
+                    });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating product: {ex.Message}");
+        }
+    }
+
+
+    private async Task DeleteProduct(int productId)
+    {
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+
+        // Find the product to delete
+        var productToDelete = products.FirstOrDefault(p => p.Id == productId);
+        if (productToDelete == null) return;
+
+        try
+        {
+            // Make a DELETE request to the backend
+            var response = await client.DeleteAsync($"https://10.0.0.12:7081/api/Product/{productId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Delete image file (only if it's not the default image)
+                if (!string.IsNullOrEmpty(productToDelete.ImageUrl) && !productToDelete.ImageUrl.EndsWith("default.jpg"))
+                {
+                    var imagePath = Path.Combine("wwwroot", productToDelete.ImageUrl.TrimStart('/'));
+                    if (File.Exists(imagePath))
+                    {
+                        File.Delete(imagePath);
+                    }
+                }
+
+                // Refresh the product list
+                await LoadProducts();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting product: {ex.Message}");
+        }
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int Quantity { get; set; } = 1;
+        public decimal Price { get; set; } = 1;
+        public string Status { get; set; }
+        public string ImageUrl { get; set; } = string.Empty; // Add ImageUrl
+    }
+}

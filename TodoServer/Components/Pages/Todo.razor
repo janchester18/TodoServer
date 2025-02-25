@@ -1,0 +1,56 @@
+﻿@page "/todo"
+@rendermode InteractiveServer
+
+<PageTitle>Todo</PageTitle>
+
+<h2 class="text-center"><strong>TODO</strong></h2>
+
+<form class="form-inline" @onsubmit="AddTask">
+    <div class="form-group mx-sm-3 mb-2">
+        <label for="inputTask" class="sr-only">Task</label>
+        <input type="text" class="form-control" id="inputTask2" placeholder="Input your task here." @bind="newTaskTitle">
+    </div>
+    <div class="text-center">
+        <button type="submit" class="btn btn-primary mb-2">Add Task</button>
+    </div>
+</form>
+
+<ul class="list-group mt-3">
+    @foreach (var task in TodoList)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span class="@(task.IsDone ? "text-decoration-line-through" : "")">@task.Title</span>
+            <div>
+                <input type="checkbox" @bind="task.IsDone" class="me-2">
+                <button class="btn btn-danger btn-sm" @onclick="() => RemoveTask(task)">Remove</button>
+            </div>
+        </li>
+    }
+</ul>
+
+
+@code {
+    private string newTaskTitle = "";
+    private List<TodoItem> TodoList = new();
+
+    private void AddTask()
+    {
+        if (!string.IsNullOrWhiteSpace(newTaskTitle))
+        {
+            TodoList.Add(new TodoItem { Title = newTaskTitle, IsDone = false });
+            newTaskTitle = "";
+        }
+    }
+
+    private void RemoveTask(TodoItem task)
+    {
+        TodoList.Remove(task);
+    }
+
+
+    public class TodoItem
+    {
+        public string? Title { get; set; }
+        public bool IsDone { get; set; }
+    }
+}
