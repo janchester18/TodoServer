@@ -10,73 +10,122 @@
 
 <h3>Inventory</h3>
 
-<div class="mb-3">
-    <input type="text" class="form-control" placeholder="Name" @bind="newProduct.Name">
-    <input type="text" class="form-control mt-2" placeholder="Description" @bind="newProduct.Description">
-    <input type="text" class="form-control mt-2" placeholder="Category" @bind="newProduct.Category">
-    <input type="number" class="form-control mt-2" placeholder="Quantity" @bind="newProduct.Quantity">
-    <input type="number" class="form-control mt-2" placeholder="Price" @bind="newProduct.Price">
-    <select class="form-control mt-2" @bind="newProduct.Status">
-        <option value="">Select Status</option>
-        <option value="In-Stock">In-Stock</option>
-        <option value="Out of stock">Out of stock</option>
-    </select>
-
-    <!-- File Upload -->
-    <InputFile OnChange="HandleFileUpload" class="form-control mt-2" />
-
-    <button class="btn btn-success mt-2" @onclick="AddProduct">Add Product</button>
-</div>
-
-<!-- Display Uploaded Image -->
-@if (!string.IsNullOrEmpty(newProduct.ImageUrl))
+@if (isLoading)
 {
-    <img src="@newProduct.ImageUrl" width="150" class="mt-2" />
+    <div class="text-center">
+        <h4>Loading products...</h4>
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
+else
+{
+    <div class="mb-3">
+        <input type="text" class="form-control" placeholder="Name" @bind="newProduct.Name">
+        <input type="text" class="form-control mt-2" placeholder="Description" @bind="newProduct.Description">
+        <input type="text" class="form-control mt-2" placeholder="Category" @bind="newProduct.Category">
+        <input type="number" class="form-control mt-2" placeholder="Quantity" @bind="newProduct.Quantity">
+        <input type="number" class="form-control mt-2" placeholder="Price" @bind="newProduct.Price">
+        <select class="form-control mt-2" @bind="newProduct.Status">
+            <option value="">Select Status</option>
+            <option value="In-Stock">In-Stock</option>
+            <option value="Out of stock">Out of stock</option>
+        </select>
 
-<div class="row">
-    @foreach (var product in products)
+        <!-- File Upload -->
+        <InputFile OnChange="HandleFileUpload" class="form-control mt-2" />
+
+        <button class="btn btn-success mt-2" @onclick="AddProduct">Add Product</button>
+    </div>
+
+    <!-- Display Uploaded Image -->
+    @if (!string.IsNullOrEmpty(newProduct.ImageUrl))
     {
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <img src="@product.ImageUrl" class="card-img-top" alt="Product Image" style="max-height: 150px; width: 100%; object-fit: contain;">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <input type="text" class="form-control" @bind="product.Name">
-                    </h5>
-                    <p class="card-text">
-                        <input type="text" class="form-control" @bind="product.Description">
-                    </p>
-                    <p><strong>Category:</strong> <input type="text" class="form-control" @bind="product.Category"></p>
-                    <p><strong>Quantity:</strong> <input type="number" class="form-control" @bind="product.Quantity"></p>
-                    <p><strong>Price:</strong> <input type="number" class="form-control" @bind="product.Price"></p>
-                    <p>
-                        <strong>Status:</strong>
-                        <select class="form-control" @bind="product.Status">
-                            <option value="">Select Status</option>
-                            <option value="In-Stock">In-Stock</option>
-                            <option value="Out of stock">Out of stock</option>
-                        </select>
-                    </p>
-                    <div class="text-center">
-                        <InputFile OnChange="(e) => OnImageSelected(e, product)" accept="image/*" class="form-control" />
-                        <button class="btn btn-warning btn-sm mt-2" @onclick="() => UpdateProductImage(product)">Update Image</button>
-                    </div>
-                    <div class="mt-3 text-center">
-                        <button class="btn btn-primary btn-sm" @onclick="() => UpdateProduct(product)">Update</button>
-                        <button class="btn btn-danger btn-sm ms-2" @onclick="() => ConfirmDelete(product.Id)">Delete</button>
+        <img src="@newProduct.ImageUrl" width="150" class="mt-2" />
+    }
+
+    <div class="row">
+        @if (products.Count == 0)
+        {
+            <div class="col-12 text-center">
+                <p>No products available.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var product in products)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="@product.ImageUrl" class="card-img-top" alt="Product Image" style="max-height: 150px; width: 100%; object-fit: contain;">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <input type="text" class="form-control" @bind="product.Name">
+                            </h5>
+                            <p class="card-text">
+                                <input type="text" class="form-control" @bind="product.Description">
+                            </p>
+                            <p><strong>Category:</strong> <input type="text" class="form-control" @bind="product.Category"></p>
+                            <p><strong>Quantity:</strong> <input type="number" class="form-control" @bind="product.Quantity"></p>
+                            <p><strong>Price:</strong> <input type="number" class="form-control" @bind="product.Price"></p>
+                            <p>
+                                <strong>Status:</strong>
+                                <select class="form-control" @bind="product.Status">
+                                    <option value="">Select Status</option>
+                                    <option value="In-Stock">In-Stock</option>
+                                    <option value="Out of stock">Out of stock</option>
+                                </select>
+                            </p>
+                            <div class="text-center">
+                                <InputFile OnChange="(e) => OnImageSelected(e, product)" accept="image/*" class="form-control" />
+                                <button class="btn btn-warning btn-sm mt-2" @onclick="() => UpdateProductImage(product)">Update Image</button>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button class="btn btn-primary btn-sm" @onclick="() => UpdateProduct(product)">Update</button>
+                                <button class="btn btn-danger btn-sm ms-2" @onclick="() => ConfirmDelete(product.Id)">Delete</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    }
-</div>
+            }
+        }
+    </div>
+}
 
 @code {
     private List<Product> products = new();
     private Product newProduct = new();
     private IBrowserFile uploadedFile; // Store the uploaded file
     private Dictionary<int, IBrowserFile> selectedImages = new();
+    private bool isLoading = true; // Loading state
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadProducts();
+        }
+    }
+
+    private async Task LoadProducts()
+    {
+        var client = HttpClientFactory.CreateClient("UnsecureAPI");
+        try
+        {
+            // Load products from the API
+            products = await client.GetFromJsonAsync<List<Product>>("api/Product") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false; // Set loading to false after loading is complete
+            StateHasChanged(); // Notify the UI to re-render
+        }
+    }
 
     private void OnImageSelected(InputFileChangeEventArgs e, Product product)
     {
@@ -102,7 +151,6 @@
         if (result.IsConfirmed)
         {
             await DeleteProduct(productId);
-            await Swal.FireAsync("Deleted!", "The product has been removed.", SweetAlertIcon.Success);
         }
     }
 
@@ -131,38 +179,48 @@
         product.ImageUrl = $"/images/{fileName}";
 
         var client = HttpClientFactory.CreateClient("UnsecureAPI");
-        var response = await client.PutAsJsonAsync($"https://10.0.0.12:7081/api/Product/{product.Id}", product);
 
-        selectedImages.Remove(product.Id);
+        // Show loading alert without awaiting
+        var loadingTask = Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Processing...",
+                Text = "Please wait while we update the product image.",
+                Icon = SweetAlertIcon.Info,
+                AllowOutsideClick = false,
+                ShowConfirmButton = false
+            });
 
-        if (response.IsSuccessStatusCode)
-        {
-            await Swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "Image Updated!",
-                    Text = "Product image has been successfully updated.",
-                    Icon = SweetAlertIcon.Success,
-                    ConfirmButtonText = "OK"
-                });
-        }
-    }
-
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadProducts();
-    }
-
-    private async Task LoadProducts()
-    {
-        var client = HttpClientFactory.CreateClient("UnsecureAPI");
         try
         {
-            products = await client.GetFromJsonAsync<List<Product>>("api/Product") ?? new();
+            var response = await client.PutAsJsonAsync($"https://10.0.0.8:7081/api/Product/{product.Id}", product);
+
+            if (response.IsSuccessStatusCode)
+            {
+                selectedImages.Remove(product.Id);
+                await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Image Updated!",
+                        Text = "Product image has been successfully updated.",
+                        Icon = SweetAlertIcon.Success,
+                        ConfirmButtonText = "OK"
+                    });
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading products: {ex.Message}");
+            Console.WriteLine($"Error updating product image: {ex.Message}");
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error!",
+                    Text = "Failed to update the product image.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+        }
+        finally
+        {
+            // Close the loading alert
+            await Swal.CloseAsync();
         }
     }
 
@@ -191,9 +249,21 @@
         }
 
         var client = HttpClientFactory.CreateClient("UnsecureAPI");
+
+        // Show loading alert without awaiting
+        var loadingTask = Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Processing...",
+                Text = "Please wait while we add the product.",
+                Icon = SweetAlertIcon.Info,
+                AllowOutsideClick = false,
+                ShowConfirmButton = false
+            });
+
         try
         {
-            var response = await client.PostAsJsonAsync("https://10.0.0.12:7081/api/Product", newProduct);
+            var response = await client.PostAsJsonAsync("https://10.0.0.8:7081/api/Product", newProduct);
+
             if (response.IsSuccessStatusCode)
             {
                 await LoadProducts();
@@ -211,16 +281,39 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error adding product: {ex.Message}");
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error!",
+                    Text = "Failed to add the product.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+        }
+        finally
+        {
+            // Close the loading alert
+            await Swal.CloseAsync();
         }
     }
-
 
     private async Task UpdateProduct(Product product)
     {
         var client = HttpClientFactory.CreateClient("UnsecureAPI");
+
+        // Show loading alert without awaiting
+        var loadingTask = Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Processing...",
+                Text = "Please wait while we update the product.",
+                Icon = SweetAlertIcon.Info,
+                AllowOutsideClick = false,
+                ShowConfirmButton = false
+            });
+
         try
         {
-            var response = await client.PutAsJsonAsync($"https://10.0.0.12:7081/api/Product/{product.Id}", product);
+            var response = await client.PutAsJsonAsync($"https://10.0.0.8:7081/api/Product/{product.Id}", product);
+
             if (response.IsSuccessStatusCode)
             {
                 await Swal.FireAsync(new SweetAlertOptions
@@ -235,27 +328,45 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating product: {ex.Message}");
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error!",
+                    Text = "Failed to update the product.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+        }
+        finally
+        {
+            // Close the loading alert
+            await Swal.CloseAsync();
         }
     }
-
 
     private async Task DeleteProduct(int productId)
     {
         var client = HttpClientFactory.CreateClient("UnsecureAPI");
-
-        // Find the product to delete
         var productToDelete = products.FirstOrDefault(p => p.Id == productId);
         if (productToDelete == null) return;
 
+        // Show loading alert without awaiting
+        var loadingTask = Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Processing...",
+                Text = "Please wait while we delete the product.",
+                Icon = SweetAlertIcon.Info,
+                AllowOutsideClick = false,
+                ShowConfirmButton = false
+            });
+
         try
         {
-            // Make a DELETE request to the backend
-            var response = await client.DeleteAsync($"https://10.0.0.12:7081/api/Product/{productId}");
+            var response = await client.DeleteAsync($"https://10.0.0.8:7081/api/Product/{productId}");
 
             if (response.IsSuccessStatusCode)
             {
-                // Delete image file (only if it's not the default image)
-                if (!string.IsNullOrEmpty(productToDelete.ImageUrl) && !productToDelete.ImageUrl.EndsWith("default.jpg"))
+                if (!string.IsNullOrEmpty(productToDelete.ImageUrl) &&
+                    !productToDelete.ImageUrl.EndsWith("default.jpg"))
                 {
                     var imagePath = Path.Combine("wwwroot", productToDelete.ImageUrl.TrimStart('/'));
                     if (File.Exists(imagePath))
@@ -264,13 +375,35 @@
                     }
                 }
 
-                // Refresh the product list
                 await LoadProducts();
+                await Swal.FireAsync("Deleted!", "The product has been removed.", SweetAlertIcon.Success);
+            }
+            else
+            {
+                await Swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Error!",
+                        Text = "Failed to delete the product.",
+                        Icon = SweetAlertIcon.Error,
+                        ConfirmButtonText = "OK"
+                    });
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error deleting product: {ex.Message}");
+            await Swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error!",
+                    Text = "An error occurred while deleting the product.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
+        }
+        finally
+        {
+            // Close the loading alert
+            await Swal.CloseAsync();
         }
     }
 

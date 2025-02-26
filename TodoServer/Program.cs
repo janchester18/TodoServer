@@ -1,4 +1,5 @@
 using CurrieTechnologies.Razor.SweetAlert2;
+using TodoServer;
 using TodoServer.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpClient("UnsecureAPI", client =>
 {
-    client.BaseAddress = new Uri("https://10.0.0.12:7081/");
+    client.BaseAddress = new Uri("https://10.0.0.8:7081/");
 })
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
@@ -17,6 +18,8 @@ builder.Services.AddHttpClient("UnsecureAPI", client =>
 });
 
 builder.Services.AddSweetAlert2();
+
+builder.Services.AddSingleton<AppState>();
 
 
 var app = builder.Build();

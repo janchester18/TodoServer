@@ -1,4 +1,10 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@page "/navmenu"
+@using CurrieTechnologies.Razor.SweetAlert2
+@inject NavigationManager Navigation
+@inject SweetAlertService Swal
+@inject AppState AppState
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">TodoServer</a>
     </div>
@@ -9,34 +15,51 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="@(() => NavigateTo(""))">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
+            <NavLink class="nav-link" href="counter" @onclick="@(() => NavigateTo("counter"))">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
+            <NavLink class="nav-link" href="weather" @onclick="@(() => NavigateTo("weather"))">
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="todo" style="line-height: 0 !important;">
+            <NavLink class="nav-link" href="todo" style="line-height: 0 !important;" @onclick="@(() => NavigateTo("todo"))">
                 <span class="bi bi-list-task" aria-hidden="true" style="padding-top: 3px !important;"></span> Todo
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="inventory" style="line-height: 0 !important;">
+            <NavLink class="nav-link" href="inventory" style="line-height: 0 !important;" @onclick="@(() => NavigateTo("inventory"))">
                 <span class="bi bi-box-seam-fill" aria-hidden="true" style="padding-top: 3px !important;"></span> Inventory
             </NavLink>
         </div>
     </nav>
 </div>
 
+@code {
+    private async Task NavigateTo(string route)
+    {
+        Console.WriteLine("Navigating");
+        // Show loading alert
+        await Swal.FireAsync(new SweetAlertOptions
+        {
+            Title = "Loading...",
+            Text = "Please wait while the page is loading...",
+            AllowOutsideClick = false,
+            ShowConfirmButton = false
+        });
+
+        // Navigate after the alert is shown
+        Navigation.NavigateTo(route);
+    }
+}
